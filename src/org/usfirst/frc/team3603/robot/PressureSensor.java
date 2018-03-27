@@ -10,6 +10,7 @@ public class PressureSensor {
 	}
 	
 	public int get() {
-		return (int) input.getVoltage() * 50 - 25;
+		double pressure = input.getVoltage() * 50.0 - 25.0;
+		return (int) pressure;
 	}
 }

@@ -27,13 +27,13 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends IterativeRobot {
    
     final static DoubleSolenoid.Value out = DoubleSolenoid.Value.kForward; //Piston out value
-    static final DoubleSolenoid.Value in = DoubleSolenoid.Value.kReverse; //Piston in value
+    final static DoubleSolenoid.Value in = DoubleSolenoid.Value.kReverse; //Piston in value
 
     //All of these are individual speed controllers
-    WPI_TalonSRX leftFront = new WPI_TalonSRX(10);
-    WPI_TalonSRX leftMiddle = new WPI_TalonSRX(11);
-    WPI_TalonSRX rightFront = new WPI_TalonSRX(4);
-    WPI_TalonSRX rightMiddle = new WPI_TalonSRX(5);
+    WPI_TalonSRX leftFront = new WPI_TalonSRX(10);//TODO
+    WPI_TalonSRX leftMiddle = new WPI_TalonSRX(11);//TODO
+    WPI_TalonSRX rightFront = new WPI_TalonSRX(4);//TODO
+    WPI_TalonSRX rightMiddle = new WPI_TalonSRX(5);//TODO
     //This groups the speed controllers into left and right
     SpeedControllerGroup left = new SpeedControllerGroup(leftFront, leftMiddle);
     SpeedControllerGroup right = new SpeedControllerGroup(rightFront, rightMiddle);
@@ -51,7 +51,7 @@ public class Robot extends IterativeRobot {
    
     Joystick joy1 = new Joystick(0); //Large twist-axis joystick
     Joystick joy2 = new Joystick(1); //Xbox controller
-    MyEncoder driveEnc = new MyEncoder(leftMiddle, false, highGear);
+    MyEncoder driveEnc = new MyEncoder(leftMiddle, false, highGear);//TODO find motor is is plugged in to
     Encoder armEnc = new Encoder(0, 1, false, EncodingType.k2X); //Arm angle encoder
     WPI_TalonSRX armStore = new WPI_TalonSRX(2); //TODO Speed controller for setting up armPID
     PIDController armPID = new PIDController(0.05, 0, 0, armEnc, armStore); //TODO PID controller for arm
@@ -60,13 +60,13 @@ public class Robot extends IterativeRobot {
    
     DriverStation matchInfo = DriverStation.getInstance(); //Object to get switch/scale colors
     boolean doOnce = true; //TODO Boolean to only enable the liftPID once at a time
-    final static double lowGear = 1/9.07;
+    final static double lowGear = 1/9.07;//TODO check to see if these are correct
     final static double highGear = 1/19.61;
    
     @Override
     public void robotInit() {
-        armStore.disable(); //Disable the PID store
-        cubeLift.getSensorCollection();
+        armStore.disable(); //Disable the PID store//TODO remove
+        cubeLift.getSensorCollection();//TODO ?
         //compressor.start(); //Start compressor
         mainDrive.setSafetyEnabled(false); //Disable safety
        
@@ -91,7 +91,7 @@ public class Robot extends IterativeRobot {
     @Override
     public void autonomousInit() {
         strPID.setSetpoint(0); //Set the setpoint of the drive straight PID to 0 degrees
-        driveEnc.reset(); //Set the touchless encoder to 0
+        driveEnc.reset(); //Set the drive encoder to 0
         gyro.reset(); //Set the gyro angle to 0
         armPID.enable();//Enable the armPID
         armEnc.reset();//Reset the arm encoder
@@ -139,6 +139,7 @@ public class Robot extends IterativeRobot {
             arm.set(armPID.get());//Set the arm motor to the armPID
         }
        
+      //TODO how should the piston work
         if(Math.abs(joy2.getRawAxis(2)) >= 0.25) { //If the left trigger is pulled...
             leftHolder.set(0.85); //Input cube TODO change these numbers if the intake speed is too fast/slow
             rightHolder.set(0.85);
