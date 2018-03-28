@@ -1,5 +1,6 @@
 package org.usfirst.frc.team3603.robot;
 
+import com.ctre.CANTalon;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.PIDSource;

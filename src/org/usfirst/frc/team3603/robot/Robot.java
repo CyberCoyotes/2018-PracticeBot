@@ -3,19 +3,19 @@ package org.usfirst.frc.team3603.robot;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.cscore.CvSink;
 import edu.wpi.cscore.CvSource;
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.cscore.VideoMode.PixelFormat;
 import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PIDController;
@@ -30,43 +30,46 @@ public class Robot extends IterativeRobot {
     final static DoubleSolenoid.Value in = DoubleSolenoid.Value.kReverse; //Piston in value
 
     //All of these are individual speed controllers
-    WPI_TalonSRX leftFront = new WPI_TalonSRX(10);//TODO
-    WPI_TalonSRX leftMiddle = new WPI_TalonSRX(11);//TODO
-    WPI_TalonSRX rightFront = new WPI_TalonSRX(4);//TODO
-    WPI_TalonSRX rightMiddle = new WPI_TalonSRX(5);//TODO
+    WPI_TalonSRX leftFront = new WPI_TalonSRX(5);
+    WPI_TalonSRX leftMiddle = new WPI_TalonSRX(6);
+    WPI_TalonSRX rightFront = new WPI_TalonSRX(5);
+    WPI_TalonSRX rightMiddle = new WPI_TalonSRX(6);
     //This groups the speed controllers into left and right
     SpeedControllerGroup left = new SpeedControllerGroup(leftFront, leftMiddle);
     SpeedControllerGroup right = new SpeedControllerGroup(rightFront, rightMiddle);
     //This groups them into the new type of RobotDrive
     DifferentialDrive mainDrive = new DifferentialDrive(left, right);
    
-    WPI_TalonSRX leftHolder = new WPI_TalonSRX(9);//TODO Leftholder speedcontroller
-    WPI_TalonSRX rightHolder = new WPI_TalonSRX(8);//TODO Rightholder speedcontroller
-    WPI_TalonSRX cubeLift = new WPI_TalonSRX(3); //TODO Cube lift speed controller
-    WPI_TalonSRX arm = new WPI_TalonSRX(7); //TODO Arm speed controller
+    WPI_TalonSRX leftHolder = new WPI_TalonSRX(4);
+    WPI_TalonSRX rightHolder = new WPI_TalonSRX(7);
+    WPI_TalonSRX arm = new WPI_TalonSRX(2);
+    WPI_TalonSRX cubeLift = new WPI_TalonSRX(1);
+    WPI_TalonSRX lift2 = new WPI_TalonSRX(3);
+    MyEncoder liftEnc = new MyEncoder(cubeLift, true, 1.0);
    
     //Compressor compressor = new Compressor(); //Air compressor
-    DoubleSolenoid shift = new DoubleSolenoid(2, 3);//TODO Transmission solenoid
-    Solenoid grabber = new Solenoid(4);//TODO
+    DoubleSolenoid grabber = new DoubleSolenoid(0, 1);
    
     Joystick joy1 = new Joystick(0); //Large twist-axis joystick
     Joystick joy2 = new Joystick(1); //Xbox controller
-    MyEncoder driveEnc = new MyEncoder(leftMiddle, false, highGear);//TODO find motor is is plugged in to
+    									MyEncoder driveEnc = new MyEncoder(rightFront, false, lowGear);
     Encoder armEnc = new Encoder(0, 1, false, EncodingType.k2X); //Arm angle encoder
-    WPI_TalonSRX armStore = new WPI_TalonSRX(2); //TODO Speed controller for setting up armPID
-    PIDController armPID = new PIDController(0.05, 0, 0, armEnc, armStore); //TODO PID controller for arm
-    AHRS gyro = new AHRS(Port.kMXP); //NavX
-    PIDController strPID = new PIDController(0.15, 0, 0, gyro, armStore); //TODO PID controller for driving straight
+    PIDController armPID = new PIDController(0.05, 0, 0, armEnc, arm);
+    //Compressor compressor = new Compressor();
    
     DriverStation matchInfo = DriverStation.getInstance(); //Object to get switch/scale colors
-    boolean doOnce = true; //TODO Boolean to only enable the liftPID once at a time
+    boolean doOnce = true;
     final static double lowGear = 1/9.07;//TODO check to see if these are correct
     final static double highGear = 1/19.61;
+    
+    PressureSensor pressure = new PressureSensor(0);
    
     @Override
     public void robotInit() {
-        armStore.disable(); //Disable the PID store//TODO remove
-        cubeLift.getSensorCollection();//TODO ?
+    	cubeLift.setInverted(true);
+    	lift2.setInverted(true);
+    	lift2.set(ControlMode.Follower, 1);
+    	//compressor.start();
         //compressor.start(); //Start compressor
         mainDrive.setSafetyEnabled(false); //Disable safety
        
@@ -90,14 +93,18 @@ public class Robot extends IterativeRobot {
     }
     @Override
     public void autonomousInit() {
-        strPID.setSetpoint(0); //Set the setpoint of the drive straight PID to 0 degrees
         driveEnc.reset(); //Set the drive encoder to 0
-        gyro.reset(); //Set the gyro angle to 0
         armPID.enable();//Enable the armPID
         armEnc.reset();//Reset the arm encoder
     }
     @Override
     public void autonomousPeriodic() {
+    }
+    
+    @Override
+    public void teleopInit() {
+    	armPID.setSetpoint(armEnc.get());
+    	driveEnc.reset();
     }
    
     @Override
@@ -116,35 +123,33 @@ public class Robot extends IterativeRobot {
             mainDrive.arcadeDrive(0, 0); //Stop if value doesn't meet threshhold
         }
        
-        if(joy1.getRawButton(3)) { //Press and hold button 3 for transmission
-            shift.set(out);//Set the transmission piston to out (high gear)
-        } else {
-            shift.set(in); //Set the transmission piston to in (low gear)
-        }
-       
         if(joy1.getRawButton(12)) {
             driveEnc.reset();
         }
-       
-       
+       System.out.println(liftEnc.get());
         /***************
          * MANIPULATOR *
          ***************/
-       
+        if(Math.abs(joy2.getRawAxis(1)) >= 0.2) {
+        	cubeLift.set(joy2.getRawAxis(1));
+        } else {
+        	cubeLift.set(0);
+        }
+        
         if(Math.abs(joy2.getRawAxis(5)) >= 0.1) { //If axis 5 is off-center...
+        	armPID.disable();
             arm.set(joy2.getRawAxis(5));//Set the arm motor to the axis reading
             armPID.setSetpoint(armEnc.get());//Set the armPID setpoint to the current encoder reading, so that it locks in to place
-            armPID.enable();//Enable the PID
+            
         } else {//If the joystick isn't being touched...
-            arm.set(armPID.get());//Set the arm motor to the armPID
+        	armPID.enable();//Enable the PID
         }
-       
-      //TODO how should the piston work
+       /*
         if(Math.abs(joy2.getRawAxis(2)) >= 0.25) { //If the left trigger is pulled...
-            leftHolder.set(0.85); //Input cube TODO change these numbers if the intake speed is too fast/slow
+            leftHolder.set(0.85);
             rightHolder.set(0.85);
         } else if(Math.abs(joy2.getRawAxis(3)) >= 0.25) { //If right trigger is pulled...
-            leftHolder.set(-0.45);//Soft spit TODO change these numbers if the grabber motors are too fast/slow
+            leftHolder.set(-0.45);
             rightHolder.set(-0.45);
         } else if(joy2.getRawButton(5)) { //If left bumper is pressed...
             leftHolder.set(-0.75); // Rotate cube
@@ -159,18 +164,22 @@ public class Robot extends IterativeRobot {
             leftHolder.set(0);
             rightHolder.set(0);
         }
+        */
+        if(joy2.getRawButton(1)) {
+        	grabber.set(out);
+        } else {
+        	grabber.set(in);
+        }
            
         read();//Read from sensors
     }
    
     void read() {//This puts data onto the smart dashboard
-        SmartDashboard.putNumber("Lift speed", cubeLift.get());
         SmartDashboard.putNumber("Arm Encoder", armEnc.get());
         SmartDashboard.putNumber("Arm PID", armPID.get());
         SmartDashboard.putNumber("Arm speed", arm.get());
-        SmartDashboard.putNumber("STRAIGHT PID", strPID.get());
-        SmartDashboard.putNumber("Gyro", gyro.getAngle());
         SmartDashboard.putNumber("Drive distance", driveEnc.get());
+        SmartDashboard.putNumber("Pressure 1", pressure.get());
     }
    
     @Override
