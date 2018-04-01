@@ -11,7 +11,6 @@ import edu.wpi.cscore.CvSource;
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.cscore.VideoMode.PixelFormat;
 import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -19,7 +18,6 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PIDController;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -52,7 +50,7 @@ public class Robot extends IterativeRobot {
    
     Joystick joy1 = new Joystick(0); //Large twist-axis joystick
     Joystick joy2 = new Joystick(1); //Xbox controller
-    									MyEncoder driveEnc = new MyEncoder(rightFront, false, lowGear);
+    MyEncoder driveEnc = new MyEncoder(rightFront, false, lowGear);
     Encoder armEnc = new Encoder(0, 1, false, EncodingType.k2X); //Arm angle encoder
     PIDController armPID = new PIDController(0.05, 0, 0, armEnc, arm);
     //Compressor compressor = new Compressor();
@@ -70,7 +68,6 @@ public class Robot extends IterativeRobot {
     	lift2.setInverted(true);
     	lift2.set(ControlMode.Follower, 1);
     	//compressor.start();
-        //compressor.start(); //Start compressor
         mainDrive.setSafetyEnabled(false); //Disable safety
        
         armPID.setOutputRange(-0.5, 0.5); //Set the range of speeds for the arm PID
@@ -126,7 +123,6 @@ public class Robot extends IterativeRobot {
         if(joy1.getRawButton(12)) {
             driveEnc.reset();
         }
-       System.out.println(liftEnc.get());
         /***************
          * MANIPULATOR *
          ***************/
@@ -140,7 +136,6 @@ public class Robot extends IterativeRobot {
         	armPID.disable();
             arm.set(joy2.getRawAxis(5));//Set the arm motor to the axis reading
             armPID.setSetpoint(armEnc.get());//Set the armPID setpoint to the current encoder reading, so that it locks in to place
-            
         } else {//If the joystick isn't being touched...
         	armPID.enable();//Enable the PID
         }
